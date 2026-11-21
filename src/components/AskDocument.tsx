@@ -15,12 +15,14 @@ export default function AskDocument({documentId}: Props) {
   const [answer, setAnswer] = useState('')
   const [sources, setSources] = useState<Source[]>([])
   const [error, setError] = useState('')
+  const [loading, setLoading] = useState(false)
 
   async function ask(event: React.FormEvent) {
     event.preventDefault()
     setError('')
     setAnswer('')
     setSources([])
+    setLoading(true)
 
     try {
       const response = await fetch(
@@ -35,39 +37,63 @@ export default function AskDocument({documentId}: Props) {
       setSources(data.sources)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Question failed')
+    } finally {
+      setLoading(false)
     }
   }
 
   return (
-    <section>
-      <h2>Ask your document</h2>
+    <div className="ask-section">
+      <div className="section-heading">
+        <span className="section-number">03</span>
+        <div>
+          <h2>Ask your document</h2>
+          <p>Ask a question and get an answer based on its contents.</p>
+        </div>
+      </div>
 
-      <form onSubmit={ask}>
+      <form className="question-form" onSubmit={ask}>
         <input
           value={question}
           onChange={(event) => setQuestion(event.target.value)}
-          placeholder="Enter your question"
+          placeholder="e.g. How does the application authenticate users?"
           required
         />
-        <button type="submit">Ask</button>
+        <button className="primary-button" type="submit" disabled={loading}>
+          {loading ? 'Searching...' : 'Ask AI'}
+        </button>
       </form>
 
-      {error && <p>{error}</p>}
+      {loading && <p className="muted-message">Searching document passages and generating an answer...</p>}
+
+      {error && <div className="error-message">{error}</div>}
 
       {answer && (
-        <section>
-          <h3>Answer</h3>
-          <p>{answer}</p>
+        <div className="answer-panel">
+          <div className="answer-heading">
+            <h3>Answer</h3>
+            <span className="answer-label">AI RESPONSE</span>
+          </div>
 
-          <h3>Sources</h3>
-          {sources.map((source) => (
-            <p key={source.chunk_id}>
-              Chunk {source.chunk_index + 1} —{' '}
-              {(source.similarity * 100).toFixed(1)}% similarity
+          <p className="answer-text">{answer}</p>
+
+          <div className="sources-section">
+            <h3>Retrieved sources</h3>
+            <p className="source-description">
+              Document passages used to generate this answer.
             </p>
-          ))}
-        </section>
+
+            <div className="source-list">
+              {sources.map((source) => (
+                <div className="source-item" key={source.chunk_id}>
+                  <span>Chunk ID: {source.chunk_id}</span>
+                  <span>{(source.similarity * 100).toFixed(1)}% similarity</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
       )}
-    </section>
+    </div>
   )
 }

@@ -14,14 +14,16 @@ interface Props {
 export default function DocumentUpload({onUploaded}: Props) {
   const [file, setFile] = useState<File | null>(null)
   const [status, setStatus] = useState('')
+  const [uploading, setUploading] = useState(false)
 
   async function upload() {
-    if (!file) return
+    if (!file || uploading) return
 
     const data = new FormData()
     data.append('file', file)
 
-    setStatus('Uploading...')
+    setStatus('Uploading document...')
+    setUploading(true)
 
     try {
       const response = await fetch('/api/documents/upload', {
@@ -37,7 +39,7 @@ export default function DocumentUpload({onUploaded}: Props) {
           const parsed = JSON.parse(body)
           message = parsed.detail || message
         } catch {
-          // Keep the original response text
+          // Keep original response text
         }
 
         throw new Error(message)
@@ -45,27 +47,44 @@ export default function DocumentUpload({onUploaded}: Props) {
 
       const document: DocumentInfo = await response.json()
       onUploaded(document)
+      setFile(null)
       setStatus('Upload successful')
     } catch (error) {
       setStatus(error instanceof Error ? error.message : 'Upload failed')
+    } finally {
+      setUploading(false)
     }
   }
 
   return (
-    <section>
-      <h2>Upload a document</h2>
+    <div className="upload-form">
+      <label className="file-picker">
+        <span>{file ? file.name : 'Choose a file'}</span>
+        <input
+          type="file"
+          accept=".pdf,.docx,.txt,.md"
+          onChange={(event) => {
+            setFile(event.target.files?.[0] ?? null)
+            setStatus('')
+          }}
+        />
+      </label>
 
-      <input
-        type="file"
-        accept=".pdf,.docx,.txt,.md"
-        onChange={(event) => setFile(event.target.files?.[0] ?? null)}
-      />
-
-      <button onClick={upload} disabled={!file}>
-        Upload
+      <button
+        className="primary-button"
+        onClick={upload}
+        disabled={!file || uploading}
+      >
+        {uploading ? 'Uploading...' : 'Upload document'}
       </button>
 
-      <p>{status}</p>
-    </section>
+      {status && (
+        <p className={`upload-status ${status === 'Upload successful' ? 'success-text' : ''}`}>
+          {status}
+        </p>
+      )}
+
+      <p className="help-text">Supported formats: PDF, DOCX, TXT, MD</p>
+    </div>
   )
 }
