@@ -56,6 +56,21 @@ function App() {
     }
   }
 
+  async function handleDelete(item: DocumentInfo) {
+    if (!window.confirm(`Delete ${item.filename}?`)) return
+
+    try {
+      const response = await fetch(`/api/documents/${item.id}`, {method: 'DELETE'})
+      if (!response.ok) throw new Error('Delete failed')
+
+      setDocuments((current) => current.filter((d) => d.id !== item.id))
+      setDocument((current) => (current?.id === item.id ? null : current))
+      setError('')
+    } catch {
+      setError('Could not delete the document')
+    }
+  }
+
   function handleEmbedded() {
     if (!document) return
 
@@ -80,21 +95,9 @@ function App() {
 
       <div className="workspace">
         <aside className="sidebar">
-          <section className="panel upload-panel">
-            <div className="section-heading">
-              <span className="section-number">01</span>
-              <div>
-                <h2>Upload document</h2>
-                <p>Add a document to your collection.</p>
-              </div>
-            </div>
-
-            <DocumentUpload onUploaded={handleUpload}/>
-          </section>
-
           <section className="panel documents-panel">
             <div className="section-heading">
-              <span className="section-number">02</span>
+              <span className="section-number">01</span>
               <div>
                 <h2>Your documents</h2>
                 <p>{documents.length} document{documents.length === 1 ? '' : 's'} in your collection</p>
@@ -109,9 +112,9 @@ function App() {
 
             <div className="document-list">
               {documents.map((item) => (
+                <div className="document-row" key={item.id}>
                 <button
                   className={`document-item ${document?.id === item.id ? 'selected' : ''}`}
-                  key={item.id}
                   onClick={() => setDocument(item)}
                   aria-pressed={document?.id === item.id}
                 >
@@ -124,9 +127,29 @@ function App() {
                     {item.embedded ? 'Ready' : 'Pending'}
                   </span>
                 </button>
+                <button
+                  className="delete-button"
+                  onClick={() => handleDelete(item)}
+                  aria-label={`Delete ${item.filename}`}
+                >
+                  ×
+                </button>
+                </div>
               ))}
             </div>
           </section>
+          <section className="panel upload-panel">
+            <div className="section-heading">
+              <span className="section-number">02</span>
+              <div>
+                <h2>Upload document</h2>
+                <p>Add a document to your collection.</p>
+              </div>
+            </div>
+
+            <DocumentUpload onUploaded={handleUpload}/>
+          </section>
+
         </aside>
 
         <section className="panel main-panel">
