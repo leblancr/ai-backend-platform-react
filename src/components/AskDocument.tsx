@@ -1,3 +1,5 @@
+import ReactMarkdown from 'react-markdown'
+import remarkGfm from 'remark-gfm'
 import {useState} from 'react'
 
 interface Source {
@@ -75,7 +77,11 @@ export default function AskDocument({documentId}: Props) {
             <span className="answer-label">AI RESPONSE</span>
           </div>
 
-          <p className="answer-text">{answer}</p>
+          <div className="answer-text">
+            <ReactMarkdown remarkPlugins={[remarkGfm]}>
+              {answer}
+            </ReactMarkdown>
+          </div>
 
           <div className="sources-section">
             <h3>Retrieved sources</h3>
